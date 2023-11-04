@@ -79,10 +79,16 @@ ui <- fluidPage(
   # sidebar
     sidebarPanel(
       selectInput("input_region","Region selection",choices = l_region, selected = "12"),
-      radioButtons("input_variable","Variable",choices = l_variables, selected = "dist")
-
+      radioButtons("input_variable","Variable",choices = l_variables, selected = "dist"),
+      
+      # sliderInput(inputId = )
+      sliderInput("slider", "Distancia (meters)",
+                  min=0, max=100000, value = 0, step=100
+      )
+      
 
   ),
+  
   # main panel
   mainPanel(
 
@@ -90,7 +96,21 @@ ui <- fluidPage(
     #plotly::plotlyOutput("ggplot"),
 
     ## opción con ggplot
-    plotOutput("ggplot")
+    plotOutput("ggplot"),
+    br(),
+    br(),
+    br(),
+    br(),
+    br(),
+    br(),
+    br(),
+    br(),
+    br(),
+    br(),
+    br(),
+    br(),
+    
+    DT::dataTableOutput("mytable")
 
       )
    )
@@ -106,7 +126,11 @@ server <- function(input, output, session) {
    print(input$input_region)
 
   ## opción con ggplot
-   p <- ggplot(read_regional_data(input$input_region), aes(personas = totl_prs) ) + # %>% mutate(dist = if_else(totl_prs <= 5, NA, dist)
+  tabla <- read_regional_data(input$input_region) #%>% 
+     #mutate(dist = if_else(dist > input$slider, dist, NA )) %>% 
+     #mutate(dst_pnd = if_else(dst_pnd > input$slider, dst_pnd, NA ))
+
+   p <- ggplot(tabla, aes(personas = totl_prs) ) + # %>% mutate(dist = if_else(totl_prs <= 5, NA, dist)
      geom_sf() +
      geom_sf(aes_string(fill = input$input_variable), lwd = 0) +
      scale_fill_continuous(high = "red", low = "green") +
@@ -134,12 +158,35 @@ server <- function(input, output, session) {
    #    showlegend = FALSE
    #  )
  })
+ 
+ 
+ create_table <- reactive({
+    tabla <- read_regional_data(input$input_region)
+    
+    tabla %>% 
+       select(dist) %>% 
+       summarise(mean = mean(dist),
+                 median = median(dist),
+                 min = min(dist),
+                 max = max(dist)
+                 
+                 ) %>%
+       select(-geometry) %>% 
+       as.data.frame() %>% 
+       mutate_at(vars(mean, median, min, max), round)
+ }
+    
+ )
+ 
+ output$mytable <- DT::renderDataTable(create_table(),
+                                       options = list(scrollX = TRUE),
+                                       rownames = FALSE)
 
 
  
  
  
-output$ggplot <- renderPlot(width = 800, height = 700, {
+output$ggplot <- renderPlot(width = 800, height = 600, {
    plot()
  })
 
