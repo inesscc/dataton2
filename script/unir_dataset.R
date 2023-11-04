@@ -82,10 +82,23 @@ completa <- distancias %>%
   st_transform(crs = 3857) %>% 
   bind_rows(entidades) %>% 
   filter(REGION != 16) %>% 
-  mutate(dist_ponderada = dist * total_pers)
+  mutate(total_personas = total_pers) %>% 
+  mutate(total_personas = if_else(is.na(total_pers) & !is.na(personas), personas, total_personas)) %>% 
+  mutate(dist_ponderada = dist * total_personas) %>% 
+  mutate(dist_ponderada2 = scale(dist_ponderada),
+         dist2 = scale(dist),
+         dist_ponderada_norm = (dist_ponderada-min(dist_ponderada))/(max(dist_ponderada)-min(dist_ponderada)),
+         dist_norm = (dist-min(dist))/(max(dist)-min(dist)
+         
 
+      
+         ))
+  
 
-completa$REGION %>% unique()
+x <- completa %>% filter(!is.na(prom_ismt))
+
+x$REGION %>% unique()
+
 write_csv(completa, "data/outputs/tabla_final_app.csv")
 
 ###################################

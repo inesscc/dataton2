@@ -58,9 +58,9 @@ read_regional_data <- function(region){
 
 ## lista de variables
 
-l_variables <- list("dist","xx","qa","nse")
+l_variables <- list("dist","dst_pnd","prm_smt")
 
-names(l_variables) <- c("distancia","nse","calidad","poblacion")
+names(l_variables) <- c("distance","Weighted distance","quality")
 
 ## lista de regiones
 l_region <- as.list(n_reg)
@@ -86,7 +86,7 @@ ui <- fluidPage(
   mainPanel(
 
     ## opción con plotly
-    #plotly::plotlyOutput("mapplot")
+    #plotly::plotlyOutput("ggplot"),
 
     ## opción con ggplot
     plotOutput("ggplot")
@@ -103,48 +103,49 @@ server <- function(input, output, session) {
 
    print(input$input_variable)
    print(input$input_region)
-   
-   
 
   ## opción con ggplot
-   ggplot(read_regional_data(input$input_region)) +
+   p <- ggplot(read_regional_data(input$input_region), aes(personas = totl_prs) ) + # %>% mutate(dist = if_else(totl_prs <= 5, NA, dist)
      geom_sf() +
      geom_sf(aes_string(fill = input$input_variable), lwd = 0) +
      scale_fill_continuous(high = "red", low = "green") +
      theme_bw()
+   #ggplotly(p, tooltip = c("personas"))
+   p
 
-   #-27.118928, -109.366627
    
-   #metro
-   
-   # metro <- sf::read_sf(paste0("app/data/tabla_shiny/r","5","/datos.shp")) %>% 
-   #    mutate(centroide = st_centroid(geometry))
-   #     ggplot(metro) +
-   #     geom_sf(colour = "red", size = 0.1) +
-   #     geom_sf(aes_string(fill = "dist")) +
-   #   scale_fill_continuous(high = "#132B43", low = "#56B1F7") +
+   # metro <- sf::read_sf(paste0("app/data/tabla_shiny/r","6","/datos.shp"))
+   # p <- ggplot(metro, aes(z = totl_prs)) +
+   #    geom_sf() +
+   #    geom_sf(aes_string(fill = "prm_smt"), lwd = 0) +
+   #    scale_fill_continuous(high = "#132B43", low = "#56B1F7") +
    #   theme_bw()
-   
-   
+   # # 
+   #     ggplotly(p)
+   #    
 
 ## opción con plotly
    # plotly::plot_ly(
    # read_regional_data(input$input_region),
-   #    split = ~nmbr_cm,
-   #    color = ~var_in,
+   #    #split = ~nmbr_cm,
+   #    #color = ~var_in,
    #    alpha = 1,
    #    showlegend = FALSE
    #  )
  })
 
 
-output$ggplot <- renderPlot(width = 900, height = 800, {
+ 
+ 
+ 
+output$ggplot <- renderPlot(width = 800, height = 700, {
    plot()
  })
 
+
 ## opción con plotly
 
- # output$mapplot <- renderPlotly({
+ # output$ggplot <- renderPlotly({
  #   plot()
  # })
 

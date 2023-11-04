@@ -1,3 +1,4 @@
 data/
 app/data/
 *.Rproj
+.Rproj.user
