@@ -73,7 +73,8 @@ names(l_region) <- c("TARAPACÁ","ANTOFAGASTA","ATACAMA","COQUIMBO","VALPARAÍSO
 
 ui <- fluidPage(
 
-  shiny::titlePanel("Detection of territorial educational exclusion"),
+  shiny::titlePanel("Territorial educational exclusion"),
+  h4("In this app you can see the accesibility of people to schools"),
   sidebarLayout(
   # sidebar
     sidebarPanel(

@@ -49,15 +49,32 @@ colegios_activos <- directorio_colegios %>%
 # Tablas simce
 ##############
 
+quinto_quintil_2_lect <-  quantile(simce2$prom_lect2m_rbd, probs = 0.8, na.rm = T)
+quinto_quintil_4_lect <-  quantile(simce4$prom_lect4b_rbd, probs = 0.8, na.rm = T)
+
+
+quinto_quintil_2_mate <-  quantile(simce2$prom_mate2m_rbd, probs = 0.8, na.rm = T)
+quinto_quintil_4_mate <-  quantile(simce4$prom_mate4b_rbd, probs = 0.8, na.rm = T)
+
+
 simce2_edit <- simce2 %>% 
   clean_names()  %>% 
   mutate(id_colegio = paste(rbd, dvrbd, sep =  "-")) %>% 
-  select(id_colegio, adecuado_mate2 =  palu_eda_ade_mate2m_rbd, adecuado_lenguaje2 = palu_eda_ade_lect2m_rbd)
+  mutate(quintil_lect2 = if_else(prom_lect2m_rbd >= quinto_quintil_2_lect, 1, 0),
+         quintil_mate2 = if_else(prom_mate2m_rbd >= quinto_quintil_2_mate, 1, 0)
+         ) %>% 
+  select(id_colegio, adecuado_mate2 =  palu_eda_ade_mate2m_rbd, adecuado_lenguaje2 = palu_eda_ade_lect2m_rbd,
+         quintil_lect2, quintil_mate2)
 
 simce4_edit <- simce4 %>% 
   clean_names()  %>% 
   mutate(id_colegio = paste(rbd, dvrbd, sep =  "-")) %>% 
-  select(id_colegio, adecuado_mate4 =  palu_eda_ade_mate4b_rbd, adecuado_lenguaje4 = palu_eda_ade_lect4b_rbd)
+  mutate(quintil_lect4 = if_else(prom_lect4b_rbd >= quinto_quintil_4_lect, 1, 0),
+         quintil_mate4 = if_else(prom_mate4b_rbd >= quinto_quintil_4_mate, 1, 0)
+  ) %>% 
+  
+  select(id_colegio, adecuado_mate4 =  palu_eda_ade_mate4b_rbd, adecuado_lenguaje4 = palu_eda_ade_lect4b_rbd,
+         quintil_lect4, quintil_mate4)
 
 ########################
 # Tabla dotación colegio
