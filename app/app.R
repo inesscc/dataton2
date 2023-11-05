@@ -58,7 +58,7 @@ read_regional_data <- function(region){
 
 ## lista de variables
 
-l_variables <- list("dist","dst_pnd","dlog", "dist_bn", "dst_bn_", "dst__10") #  
+l_variables <- list("dist","dst_pnd","dlog", "dist_bn", "dpd", "dst__10") #  
 
 names(l_variables) <- c("distance","Weighted distance", "distance log10", "quality", "weighted quality", "quality log10")
 

@@ -47,6 +47,7 @@ censo <- read_csv("data/outputs/censo17_ismt.csv")
 
 # información sobre distancia a colegios buenos
 distancias_colegios_buenos <- read_excel("data/outputs/distancias_por_manzana_alto_rendimiento_quintiles.xlsx")
+distancias_entidad_colegios_buenos <- read_excel("data/outputs/distancias_por_entidad_alto_rendimiento_quintil.xlsx")
 
 # Distancia a colegios
 distancias <- read_excel("data/outputs/distancias_por_manzana.xlsx")
@@ -75,8 +76,13 @@ entidades = st_read('data/shapes/microdatos_entidad/Microdatos_Entidad.shp') %>%
          ) %>% 
   left_join(distancias_entidad %>%
               select(-nn), by = "id_ent") %>% 
+  left_join(distancias_entidad_colegios_buenos %>%
+              select(-nn, dist_bueno = dist, id_ent, rbd), by = "id_ent" ) %>% 
   select(-region, -comuna) %>% 
   filter(!nombre_com %in% c("ISLA DE PASCUA", "JUAN FERNÁNDEZ"))
+
+
+
 
 # Tratar distancias a colegios buenos
 distancias_colegios_buenos <- distancias_colegios_buenos %>% 
@@ -103,7 +109,7 @@ completa <- distancias %>%
          dist_ponderada_norm = (dist_ponderada-min(dist_ponderada))/(max(dist_ponderada)-min(dist_ponderada)),
          dist_norm = (dist-min(dist))/(max(dist)-min(dist)),
          dist_bueno_10 = log10(dist_bueno),
-         dist_bueno_ponderado = dist_bueno * total_personas
+         dpd = dist_bueno * total_personas
          ) %>% 
   mutate(centroid = st_centroid(geometry)) %>% 
   mutate(id_ent = if_else(is.na(id_ent), "999", id_ent)) %>% 
