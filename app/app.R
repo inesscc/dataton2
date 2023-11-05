@@ -74,7 +74,11 @@ names(l_region) <- c("TARAPACÁ","ANTOFAGASTA","ATACAMA","COQUIMBO","VALPARAÍSO
 ui <- fluidPage(
 
   shiny::titlePanel("Territorial educational exclusion"),
-  h4("In this app you can see the accesibility of people to schools"),
+  h4("In this app you can see the accesibility to schools in terms of distance"),
+  h5("Distance: Meters to closest school"),
+  h5("Weighted Distance: Weighting by the population"),
+  h5("Quality: Distance to closest high quality school"),
+  
   sidebarLayout(
   # sidebar
     sidebarPanel(
@@ -108,9 +112,9 @@ ui <- fluidPage(
     br(),
     br(),
     br(),
-    br(),
+    br() #,
     
-    DT::dataTableOutput("mytable")
+    #DT::dataTableOutput("mytable")
 
       )
    )
@@ -160,27 +164,27 @@ server <- function(input, output, session) {
  })
  
  
- create_table <- reactive({
-    tabla <- read_regional_data(input$input_region)
-    
-    tabla %>% 
-       select(dist) %>% 
-       summarise(mean = mean(dist),
-                 median = median(dist),
-                 min = min(dist),
-                 max = max(dist)
-                 
-                 ) %>%
-       select(-geometry) %>% 
-       as.data.frame() %>% 
-       mutate_at(vars(mean, median, min, max), round)
- }
-    
- )
- 
- output$mytable <- DT::renderDataTable(create_table(),
-                                       options = list(scrollX = TRUE),
-                                       rownames = FALSE)
+ # create_table <- reactive({
+ #    tabla <- read_regional_data(input$input_region)
+ #    
+ #    tabla %>% 
+ #       select(dist) %>% 
+ #       summarise(mean = mean(dist),
+ #                 median = median(dist),
+ #                 min = min(dist),
+ #                 max = max(dist)
+ #                 
+ #                 ) %>%
+ #       select(-geometry) %>% 
+ #       as.data.frame() %>% 
+ #       mutate_at(vars(mean, median, min, max), round)
+ # }
+ #    
+ # )
+ # 
+ # output$mytable <- DT::renderDataTable(create_table(),
+ #                                       options = list(scrollX = TRUE),
+ #                                       rownames = FALSE)
 
 
  

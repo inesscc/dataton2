@@ -50,12 +50,15 @@ distancias <- read_excel("data/outputs/distancias_por_manzana.xlsx")
 distancias_entidad <- read_excel("data/outputs/distancias_por_entidad.xlsx")
 
 # Shapes: contiene solo 15 regiones
-shapes_manzanas <-  sf::read_sf("data/shapes/Manzanas/pob_manzana_censo2017.shp")
+#shapes_manzanas <-  sf::read_sf("data/shapes/Manzanas/pob_manzana_censo2017.shp")
+shapes_manzanas <-  sf::read_sf("data/shapes/Manzanas/microdatos_manzana/Microdatos_Manzana.shp")
 
 # Para asegurar el orden de las regiones
-shapes_manzanas <- shapes_manzanas %>% 
+shapes_manzanas <- shapes_manzanas %>%
+  mutate(caracteres = nchar(as.character(MANZENT))) %>% 
+  mutate(REGION = if_else(caracteres == 14, str_sub(MANZENT, 1, 2), str_sub(MANZENT, 1, 1))) %>% 
   mutate(REGION = as.numeric(REGION)) %>% 
-  select(REGION, geometry, MANZENT_I)
+  select(REGION, geometry, MANZENT, nombre_comuna = COMUNA) 
 
 # shapes de entidades (zonas rurales)
 entidades = st_read('data/shapes/microdatos_entidad/Microdatos_Entidad.shp') %>% 
@@ -76,12 +79,12 @@ entidades = st_read('data/shapes/microdatos_entidad/Microdatos_Entidad.shp') %>%
 # Unir todo
 completa <- distancias %>% 
   inner_join(censo %>% mutate(id_manzent = as.character(as.numeric(id_manzent))),
-             by =  c("manzent"= "id_manzent")) %>% 
-  inner_join(shapes_manzanas, by = c("manzent" = "MANZENT_I") ) %>% 
+              by =  c("manzent"= "id_manzent")) %>% 
+  inner_join(shapes_manzanas, by = c("manzent" = "MANZENT") ) %>% 
   sf::st_as_sf() %>% 
   st_transform(crs = 3857) %>% 
   bind_rows(entidades) %>% 
-  filter(REGION != 16) %>% 
+  filter(REGION != 16, !comuna %in% c(5201, 5104)) %>%
   mutate(total_personas = total_pers) %>% 
   mutate(total_personas = if_else(is.na(total_pers) & !is.na(personas), personas, total_personas)) %>% 
   mutate(dist_ponderada = dist * total_personas) %>% 
@@ -90,14 +93,49 @@ completa <- distancias %>%
          dist_ponderada_norm = (dist_ponderada-min(dist_ponderada))/(max(dist_ponderada)-min(dist_ponderada)),
          dist_norm = (dist-min(dist))/(max(dist)-min(dist)
          
+         )) %>% 
+  mutate(centroid = st_centroid(geometry)) %>% 
+  mutate(id_ent = if_else(is.na(id_ent), "999", id_ent)) %>% 
+  filter( id_ent != "e16608") # sacar una isla rara
 
-      
-         ))
-  
+censo %>% 
+  filter( comuna == 8201 & area == 1) %>% 
+  anti_join(completa %>% filter(nombre_comuna == "LEBU"),
+            by = c("id_manzent" = "manzent")  ) %>% 
+  nrow()
 
-x <- completa %>% filter(!is.na(prom_ismt))
+censo %>%
+  filter( comuna == 8201 & area == 1) %>% 
+  nrow()
 
-x$REGION %>% unique()
+
+for (com_shape in unique(shapes_manzanas$nombre_comuna)) {
+        if (!com_shape %in% completa$nombre_comuna ) {
+          print(com_shape)
+        }
+  }
+
+
+
+
+# xy <- sf::st_coordinates(completa$centroid)
+# 
+# z <- completa %>% 
+#   mutate(x = xy[, 1]) %>% 
+#   mutate(x_abs = as.integer(abs(x))) 
+# 
+# 
+# z %>% 
+#   filter( x_abs == 8916497) %>% 
+#   select(id_ent, manzent)
+# 
+# 
+# completa$x %>% summary()
+# z$x_abs %>% summary()
+# completa$x %>% class()
+# 
+# x$centroid[1:10]
+# x$REGION %>% unique()
 
 write_csv(completa, "data/outputs/tabla_final_app.csv")
 
@@ -107,6 +145,8 @@ write_csv(completa, "data/outputs/tabla_final_app.csv")
 n_reg <- c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15")
 
 # Crear directorios
+
+remove()
 purrr::walk(n_reg,~dir.create(paste0("app/data/tabla_shiny/r", .x)))
 
 # Separar por regiones
