@@ -58,16 +58,17 @@ read_regional_data <- function(region){
 
 ## lista de variables
 
-l_variables <- list("dist","dst_pnd","prm_smt")
+l_variables <- list("dist","dst_pnd","dlog", "dist_bn", "dst_bn_", "dst__10") #  
 
-names(l_variables) <- c("distance","Weighted distance","quality")
+names(l_variables) <- c("distance","Weighted distance", "distance log10", "quality", "weighted quality", "quality log10")
 
 ## lista de regiones
 l_region <- as.list(n_reg)
 
+
+
 names(l_region) <- c("TARAPACÁ","ANTOFAGASTA","ATACAMA","COQUIMBO","VALPARAÍSO","O'HIGGINS","MAULE","BIOBÍO","LA ARAUCANÍA",
   "LOS LAGOS","AYSÉN","MAGALLANES","METROPOLITANA","LOS RÍOS","ARICA Y PARINACOTA")
-
 
 ## 4. Construimos shiny app
 
@@ -85,10 +86,7 @@ ui <- fluidPage(
       selectInput("input_region","Region selection",choices = l_region, selected = "12"),
       radioButtons("input_variable","Variable",choices = l_variables, selected = "dist"),
       
-      # sliderInput(inputId = )
-      sliderInput("slider", "Distancia (meters)",
-                  min=0, max=100000, value = 0, step=100
-      )
+
       
 
   ),
@@ -122,6 +120,15 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
 
+  
+  
+
+  datos_filtrados <- reactive({
+    
+    filtro <-  sf::read_sf(paste0("data/tabla_shiny/r",input$input_region,"/datos.shp"))
+    comunas <- unique(filtro$nombre_comuna)
+    return(comunas)
+  })
 
 
  plot <-  reactive({
@@ -143,15 +150,15 @@ server <- function(input, output, session) {
    p
 
    
-   # metro <- sf::read_sf(paste0("app/data/tabla_shiny/r","6","/datos.shp"))
+   #metro <- sf::read_sf(paste0("app/data/tabla_shiny/r","6","/datos.shp"))
    # p <- ggplot(metro, aes(z = totl_prs)) +
    #    geom_sf() +
    #    geom_sf(aes_string(fill = "prm_smt"), lwd = 0) +
    #    scale_fill_continuous(high = "#132B43", low = "#56B1F7") +
    #   theme_bw()
-   # # 
+   # #
    #     ggplotly(p)
-   #    
+
 
 ## opción con plotly
    # plotly::plot_ly(
@@ -194,6 +201,10 @@ output$ggplot <- renderPlot(width = 800, height = 600, {
    plot()
  })
 
+
+output$resultado <- renderPrint({
+  datos_filtrados()
+})
 
 ## opción con plotly
 

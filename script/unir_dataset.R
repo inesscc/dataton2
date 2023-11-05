@@ -45,6 +45,9 @@ write_csv(censo17_ismt, file = "data/outputs/censo17_ismt.csv")
 # Información censal
 censo <- read_csv("data/outputs/censo17_ismt.csv")
 
+# información sobre distancia a colegios buenos
+distancias_colegios_buenos <- read_excel("data/outputs/distancias_por_manzana_alto_rendimiento_quintiles.xlsx")
+
 # Distancia a colegios
 distancias <- read_excel("data/outputs/distancias_por_manzana.xlsx")
 distancias_entidad <- read_excel("data/outputs/distancias_por_entidad.xlsx")
@@ -75,9 +78,14 @@ entidades = st_read('data/shapes/microdatos_entidad/Microdatos_Entidad.shp') %>%
   select(-region, -comuna) %>% 
   filter(!nombre_com %in% c("ISLA DE PASCUA", "JUAN FERNÁNDEZ"))
 
+# Tratar distancias a colegios buenos
+distancias_colegios_buenos <- distancias_colegios_buenos %>% 
+  select(manzent, dist_bueno = dist)
+
 
 # Unir todo
 completa <- distancias %>% 
+  inner_join(distancias_colegios_buenos, by = "manzent") %>% 
   inner_join(censo %>% mutate(id_manzent = as.character(as.numeric(id_manzent))),
               by =  c("manzent"= "id_manzent")) %>% 
   inner_join(shapes_manzanas, by = c("manzent" = "MANZENT") ) %>% 
@@ -87,17 +95,20 @@ completa <- distancias %>%
   filter(REGION != 16, !comuna %in% c(5201, 5104)) %>%
   mutate(total_personas = total_pers) %>% 
   mutate(total_personas = if_else(is.na(total_pers) & !is.na(personas), personas, total_personas)) %>% 
-  mutate(dist_ponderada = dist * total_personas) %>% 
+  mutate(dist_ponderada = dist * total_personas,
+         dlog = log10(dist)
+         ) %>% 
   mutate(dist_ponderada2 = scale(dist_ponderada),
          dist2 = scale(dist),
          dist_ponderada_norm = (dist_ponderada-min(dist_ponderada))/(max(dist_ponderada)-min(dist_ponderada)),
-         dist_norm = (dist-min(dist))/(max(dist)-min(dist)
-         
-         )) %>% 
+         dist_norm = (dist-min(dist))/(max(dist)-min(dist)),
+         dist_bueno_10 = log10(dist_bueno),
+         dist_bueno_ponderado = dist_bueno * total_personas
+         ) %>% 
   mutate(centroid = st_centroid(geometry)) %>% 
   mutate(id_ent = if_else(is.na(id_ent), "999", id_ent)) %>% 
-  filter( id_ent != "e16608") # sacar una isla rara
-
+  filter( id_ent != "e16608")   # sacar una isla rara
+  
 censo %>% 
   filter( comuna == 8201 & area == 1) %>% 
   anti_join(completa %>% filter(nombre_comuna == "LEBU"),
@@ -146,7 +157,6 @@ n_reg <- c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15")
 
 # Crear directorios
 
-remove()
 purrr::walk(n_reg,~dir.create(paste0("app/data/tabla_shiny/r", .x)))
 
 # Separar por regiones
@@ -154,3 +164,6 @@ fe = split(completa,completa$REGION)
 
 # # 2.1 separamos el dato por regiones y lo guardamos
 purrr::walk2(fe,n_reg,~st_write(.x,paste0("app/data/tabla_shiny/r",.y,"/datos.shp")))
+
+
+full_data <-  st_write(completa,paste0("app/data/tabla_shiny/full",.y,"/datos.shp"))
